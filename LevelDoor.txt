@@ -1,0 +1,63 @@
+-- 길을 막는 블럭 스크립트
+
+local blockingPart = script.Parent -- 스크립트가 삽입된 블럭
+local requiredCoins = 10 -- 필요한 코인 수
+local originalPosition = blockingPart.Position -- 원래 위치 저장
+
+local function onTouched(otherPart)
+	local character = otherPart.Parent
+	local player = game.Players:GetPlayerFromCharacter(character)
+
+	if player then
+		local leaderstats = player:FindFirstChild("leaderstats")
+		if leaderstats then
+			local coins = leaderstats:FindFirstChild("Coin")
+			if coins and coins.Value >= requiredCoins then
+				coins.Value = coins.Value - requiredCoins -- 코인 차감
+				blockingPart:Destroy() -- 길을 막는 블럭 제거
+			end
+		end
+	end
+end
+
+blockingPart.Touched:Connect(onTouched)
+
+-- 길을 막는 블럭 복원 함수
+local function restoreBlockingPart()
+	local newPart = Instance.new("Part")
+	newPart.Name = blockingPart.Name
+	newPart.Size = blockingPart.Size
+	newPart.CFrame = blockingPart.CFrame
+	newPart.Anchored = blockingPart.Anchored
+	newPart.CanCollide = blockingPart.CanCollide
+	newPart.Parent = blockingPart.Parent
+
+	local newScript = script:Clone()
+	newScript.Parent = newPart
+	newScript.Disabled = false
+end
+
+-- 원래 위치 저장
+script.Parent:SetAttribute("OriginalPosition", script.Parent.Position)
+
+-- Snow 블럭 스크립트 연결
+local snowBlock = game.Workspace:WaitForChild("Teleport"):WaitForChild("Snow")
+
+local function onSnowTouched(otherPart)
+	local character = otherPart.Parent
+	local player = game.Players:GetPlayerFromCharacter(character)
+
+	if player then
+		-- 길을 막는 블럭을 찾아서 복원
+		for _, part in pairs(game.Workspace:GetDescendants()) do
+			if part:IsA("Part") and part.Name == blockingPart.Name then
+				-- 블럭 제거 및 복원
+				part:Destroy()
+				wait(1) -- 블럭이 완전히 제거될 시간을 준 후 복원
+				restoreBlockingPart()
+			end
+		end
+	end
+end
+
+snowBlock.Touched:Connect(onSnowTouched)

@@ -1,0 +1,69 @@
+local ProximityPrompt = script.Parent:WaitForChild("ProximityPrompt")
+local Players = game:GetService("Players")
+
+-- 대화창 GUI 가져오기
+local function getDialogGui(player)
+	local playerGui = player:WaitForChild("PlayerGui")
+	return playerGui:WaitForChild("NPCDialogGui")
+end
+
+-- 상점 GUI 가져오기
+local function getShopGui(player)
+	local playerGui = player:WaitForChild("PlayerGui")
+	return playerGui:WaitForChild("ShopGui")
+end
+
+ProximityPrompt.Triggered:Connect(function(player)
+	local dialogGui = getDialogGui(player)
+	local dialogFrame = dialogGui.DialogFrame
+	local dialogText = dialogFrame.DialogText
+	local optionButton1 = dialogFrame.OptionButton1
+	local optionButton2 = dialogFrame.OptionButton2
+	local optionButton3 = dialogFrame.OptionButton3
+	local acceptButton = dialogFrame.AcceptButton
+	local declineButton = dialogFrame.DeclineButton
+
+	-- 초기 대화 설정
+	dialogText.Text = "안녕? 무슨 일로 왔어"
+	optionButton1.Visible = true
+	optionButton2.Visible = true
+	optionButton3.Visible = true
+	acceptButton.Visible = false
+	declineButton.Visible = false
+
+	dialogFrame.Visible = true
+
+	-- 버튼 클릭 이벤트 설정
+	optionButton1.MouseButton1Click:Connect(function()
+		dialogFrame.Visible = false
+		local shopGui = getShopGui(player)
+		shopGui.ShopFrame.Visible = true
+	end)
+
+	optionButton2.MouseButton1Click:Connect(function()
+		dialogText.Text = "미션 내용: ...\n미션을 수락하겠습니까?"
+		optionButton1.Visible = false
+		optionButton2.Visible = false
+		optionButton3.Visible = false
+		acceptButton.Visible = true
+		declineButton.Visible = true
+	end)
+
+	optionButton3.MouseButton1Click:Connect(function()
+		dialogText.Text = "다음에 봐!"
+		wait(2)
+		dialogFrame.Visible = false
+	end)
+
+	acceptButton.MouseButton1Click:Connect(function()
+		dialogText.Text = "미션이 수락되었습니다."
+		wait(2)
+		dialogFrame.Visible = false
+	end)
+
+	declineButton.MouseButton1Click:Connect(function()
+		dialogText.Text = "그럴 수 있지. 나중에 봐!"
+		wait(2)
+		dialogFrame.Visible = false
+	end)
+end)

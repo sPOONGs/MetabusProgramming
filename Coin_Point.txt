@@ -1,0 +1,23 @@
+local coin = script.Parent
+
+local function onTouch(hit)
+	local character = hit.Parent
+	local player = game.Players:GetPlayerFromCharacter(character)
+
+	if player then
+		local leaderstats = player:FindFirstChild("leaderstats")
+		if leaderstats then
+			local coins = leaderstats:FindFirstChild("Coin")
+			if coins then
+				-- 코인 값을 1에서 10 사이의 랜덤 값으로 증가시킴
+				local randomCoins = math.random(1, 5)
+				coins.Value = coins.Value + randomCoins
+
+				-- 코인을 먹었으므로 파트를 제거함
+				coin:Destroy()
+			end
+		end
+	end
+end
+
+coin.Touched:Connect(onTouch)

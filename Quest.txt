@@ -1,0 +1,14 @@
+local f = false
+
+script.Parent.Touched:Connect(function(hit)
+	local h = hit.Parent:FindFirstChild("Humanoid")
+
+	if h and f == false then
+		f = true
+		local plr = game.Players:GetPlayerFromCharacter(hit.Parent)
+		
+		game.ReplicatedStorage:WaitForChild("Quest"):FireClient(plr, "A")
+		wait(0.5)
+		f = false
+	end
+end)

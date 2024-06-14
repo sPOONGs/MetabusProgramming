@@ -1,0 +1,34 @@
+-- 보스 몬스터 스크립트
+local boss = script.Parent -- 스크립트가 삽입된 보스 몬스터
+local humanoid = boss:FindFirstChildOfClass("Humanoid") -- 보스 몬스터의 Humanoid
+
+-- 다른 몬스터들의 공격력과 체력 증가 함수
+local function increaseMonstersStats()
+	local monstersFolder = game.Workspace:FindFirstChild("Monsters") -- 몬스터들이 있는 폴더
+	if monstersFolder then
+		for _, monster in pairs(monstersFolder:GetChildren()) do
+			local monsterHumanoid = monster:FindFirstChildOfClass("Humanoid")
+			if monsterHumanoid then
+				-- 공격력과 체력 증가
+				monsterHumanoid.Health = monsterHumanoid.Health * 1.5 -- 체력 1.5배 증가
+				monsterHumanoid.MaxHealth = monsterHumanoid.MaxHealth * 1.5 -- 최대 체력 1.5배 증가
+				monsterHumanoid:TakeDamage(-monsterHumanoid.MaxHealth + monsterHumanoid.Health) -- 체력 회복
+				if monster:FindFirstChild("Damage") then
+					monster.Damage.Value = monster.Damage.Value * 1.5 -- 공격력 1.5배 증가
+				else
+					local damage = Instance.new("IntValue", monster)
+					damage.Name = "Damage"
+					damage.Value = 10 -- 기본값
+					damage.Value = damage.Value * 1.5
+				end
+			end
+		end
+	end
+end
+
+-- 보스 몬스터의 사망 이벤트 연결
+if humanoid then
+	humanoid.Died:Connect(function()
+		increaseMonstersStats()
+	end)
+end

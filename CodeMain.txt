@@ -1,0 +1,65 @@
+local code = {
+	{code = "kangnam", value = "Coin", reward = 1000};
+	{code = "admin1", value = "Coin", reward = 10000};
+}
+
+local datastore = game:GetService("DataStoreService"):GetDataStore("Code") --Code라는 데이터 저장공간 만들기
+
+game.ReplicatedStorage.CodeEvent.OnServerEvent:Connect(function(plr, text) --CodeEvent에서 신호가 왔을 때 (OK 버튼 안에 있는 스크립트 참고)
+	for i = 1, #code do --code 변수에 코드 갯수만큼 반복
+		if text == code[i].code then --code와 플레이어가 적은 코드가 일치할 때
+			if plr.leaderstats:FindFirstChild(code[i].value) then --코드가 코인 보상을 주는 코드일 때
+				local key = plr.userId..code[i].code --고유번호 생성
+				local data
+				
+				pcall(function() --데이터 불러오기에 문제가 생겨도 스크립트가 멈추지 않도록 해줌
+					data = datastore:GetAsync(key) --고유번호가 저장됐었는지 확인위해 데이터 불러오기 (저장됐으면 이미 보상 받은거)
+				end)
+
+				if not data then --고유번호가 저장된적 없으면
+					plr.leaderstats:FindFirstChild(code[i].value).Value += code[i].reward --코인 지급
+
+					pcall(function()
+						datastore:SetAsync(key, code[i].code) --고유번호 저장
+					end)
+
+					plr.PlayerGui.CodeGui.Frame.Frame.OK.TextButton.Text = "지급 완료" --지급완료 텍스트 띄우기
+					wait(1)
+					plr.PlayerGui.CodeGui.Frame.Frame.OK.TextButton.Text = "확인"
+				else --고유번호가 저장이 됐었다면
+					plr.PlayerGui.CodeGui.Frame.Frame.OK.TextButton.Text = "이미 받은 아이템입니다."
+					wait(1)
+					plr.PlayerGui.CodeGui.Frame.Frame.OK.TextButton.Text = "확인"
+                end
+                
+                break
+			elseif game.ReplicatedStorage:FindFirstChild(code[i].value) then --코드가 아이템 보상을 주는 코드일 때
+				local key = plr.userId..code[i].code
+				local data
+
+				pcall(function()
+					data = datastore:GetAsync(key)
+				end)
+
+				if not data then
+					game.ReplicatedStorage:FindFirstChild(code[i].value):Clone().Parent = plr.Backpack --Backpack에 아이템 복사해서 넣기
+					game.ReplicatedStorage:FindFirstChild(code[i].value):Clone().Parent = plr.StarterGear --StarterGear에 아이템 복사해서 넣기 (죽어도 아이템 사라지지 않게)
+
+					pcall(function()
+						datastore:SetAsync(key, code[i].code)
+					end)
+
+					plr.PlayerGui.CodeGui.Frame.Frame.OK.TextButton.Text = "지급 완료"
+					wait(1)
+					plr.PlayerGui.CodeGui.Frame.Frame.OK.TextButton.Text = "확인"
+				else
+					plr.PlayerGui.CodeGui.Frame.Frame.OK.TextButton.Text = "이미 받은 아이템입니다."
+					wait(1)
+					plr.PlayerGui.CodeGui.Frame.Frame.OK.TextButton.Text = "확인"
+                end
+                
+                break
+			end
+		end
+	end
+end)

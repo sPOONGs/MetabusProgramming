@@ -1,0 +1,11 @@
+local f = false
+local YAnimation = game.Players.LocalPlayer.Character.Humanoid:FindFirstChild("Animator"):LoadAnimation(script.Parent.Animation)
+
+script.Parent.Activated:Connect(function()
+	if not f then
+		f = true
+		YAnimation:Play()
+		wait(0.7)
+		f = false
+	end
+end)

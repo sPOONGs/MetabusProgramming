@@ -1,0 +1,47 @@
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+
+local rotationTime = 2 -- 회전하는 데 걸리는 시간 (초 단위)
+local rotationAngle = 360 -- 회전 각도
+
+local function rotateCoin(part)
+	local goal = {}
+	goal.Orientation = part.Orientation + Vector3.new(0, rotationAngle, 0)
+
+	local tweenInfo = TweenInfo.new(
+		rotationTime, -- 트윈 시간
+		Enum.EasingStyle.Linear, -- 선형 트윈
+		Enum.EasingDirection.InOut, -- 트윈 방향
+		-1, -- 반복 횟수 (-1이면 무한 반복)
+		false, -- 트윈 역방향
+		0 -- 트윈 지연 시간
+	)
+
+	local tween = TweenService:Create(part, tweenInfo, goal)
+	tween:Play()
+end
+
+-- 초기 코인 회전 시작
+rotateCoin(script.Parent)
+
+-- ProximityPrompt 이벤트를 통해 코인 복제 및 회전 설정
+local glassPart = script.Parent
+local proximityPrompt = glassPart:FindFirstChild("ProximityPrompt")
+
+local function onProximityTriggered(player)
+	-- 코인 복제
+	local newCoin = script.Parent:Clone()
+	newCoin.Parent = script.Parent.Parent -- 원래 부모에 추가
+	newCoin.Position = newCoin.Position + Vector3.new(5, 0, 0) -- 약간 옮기기
+
+	-- 복제된 코인 회전 설정
+	local newScript = script:Clone()
+	newScript.Parent = newCoin
+	newScript.Disabled = false
+
+	rotateCoin(newCoin)
+end
+
+if proximityPrompt then
+	proximityPrompt.Triggered:Connect(onProximityTriggered)
+end

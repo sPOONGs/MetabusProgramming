@@ -1,0 +1,3 @@
+script.Parent.Activated:connect(function()
+	script.Parent.Slash:FireServer()
+end)

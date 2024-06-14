@@ -1,0 +1,11 @@
+local price = 10
+
+script.Parent.ProximityPrompt.Triggered:Connect(function(plr)
+	local clone = game.ReplicatedStorage:WaitForChild("HealingPotion"):Clone()
+
+	if plr.leaderstats.Coin.Value >= price then
+		plr.leaderstats.Coin.Value = plr.leaderstats.Coin.Value - price
+		clone.Parent = plr.Backpack
+		clone:Clone().Parent = plr.StarterGear
+	end
+end)

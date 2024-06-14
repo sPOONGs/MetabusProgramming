@@ -1,0 +1,71 @@
+local Click = false
+local DamageCool = false
+
+local Damage = 15 --아이템 대미지
+local Exp = 1 --한번 몬스터를 공격했을 때 올라갈 EXP
+local Money = 3 --몬스터를 잡으면 얻을 코인 수
+
+local function onTouched(hit, plr)
+	local find = hit.Parent:FindFirstChild("mob") --몬스터인지 확인
+	local findH = hit.Parent:FindFirstChild("Humanoid") --몬스터인지 확인
+
+	local DamageBoost = plr.Values.PowerBoost.Value
+	local CoinBoost = plr.Values.CoinBoost.Value
+
+	if find ~= nil and find.Health > 0 then --몬스터가 맞고 체력이 0 이상이면
+		if not DamageCool then
+			DamageCool = true
+
+			find:TakeDamage(Damage + DamageBoost)
+
+			plr.Values.Exp.Value += Exp
+			if find.Health <= 0 then
+				game.ReplicatedStorage:WaitForChild("Quest"):FireClient(plr, hit.Parent.Name)
+				plr.leaderstats.Coin.Value += (Money + CoinBoost)
+			end
+
+			wait(1) --대미지 쿨타임
+			DamageCool = false
+		end
+	elseif findH ~= nil and findH.Health > 0 then
+		if not DamageCool then
+			DamageCool = true
+
+			findH:TakeDamage(Damage + DamageBoost)
+
+			plr.Values.Exp.Value += Exp
+			if findH.Health <= 0 then
+				game.ReplicatedStorage:WaitForChild("Quest"):FireClient(plr, hit.Parent.Name)
+				plr.leaderstats.Coin.Value += (Money + CoinBoost)
+			end
+
+			wait(1) --대미지 쿨타임
+			DamageCool = false
+		end
+	end
+end
+
+script.Parent.Activated:Connect(function() --아이템을 든 상태에서 화면을 클릭했을 때
+	if not Click then --쿨타임 확인
+		Click = true
+
+		local plr = game.Players:playerFromCharacter(script.Parent.Parent) --플레이어 구하기
+		local h = script.Parent.Parent:WaitForChild("Humanoid") --휴머노이드 구하기
+		local anim = script.Parent.Parent.Humanoid:LoadAnimation(script.Attack)
+		anim:Play() --애니메이션 플레이
+
+		-- Handle 부분과 blade 부분 모두 Touched 이벤트에 반응하도록 설정
+		script.Parent.Handle.Touched:Connect(function(hit)
+			onTouched(hit, plr)
+		end)
+
+		script.Parent.blade.Touched:Connect(function(hit)
+			onTouched(hit, plr)
+		end)
+
+		wait(1) --사용 쿨타임
+		Click = false
+	end
+end)
+
+

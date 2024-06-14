@@ -1,0 +1,113 @@
+-- Rescripted by thebrickplanetboy
+local Tool = script.Parent
+local Sounds = {
+	GlassBreak = Tool.Handle:WaitForChild("GlassBreak"),
+	Drink = Tool.Handle:WaitForChild("DrinkSound"),
+}
+
+local Character = nil
+local Humanoid = nil
+local RootPart = nil
+local Player = nil
+
+local ToolUnequipped = nil
+local ToolEquipped = false
+
+local Players = game:GetService("Players")
+local Debris = game:GetService("Debris")
+local Grips = {
+	Normal = CFrame.new(0.1, 0, 0.1, 0.217036337, 0, 0.976163626, 0, 1, -0, -0.976163507, 0, 0.217036366),
+	Drinking = CFrame.new(1.5, -0.35, 0.1, 1, 0, -0, -0, 0.651038408, 0.759044766, 0, -0.759044766, 0.651038408),
+}
+
+local function HealPlayer(RootPart, Humanoid)
+	local Particles = script:WaitForChild("Particles")
+	Particles.Enabled = true
+	Particles.Parent = RootPart
+	Humanoid.Health = Humanoid.MaxHealth
+	Debris:AddItem(Particles, 10)
+end
+
+local function CheckIfAlive()
+	return (((Player and Player.Parent and Character and Character.Parent and Humanoid and Humanoid.Parent and Humanoid.Health > 0 and RootPart and RootPart.Parent) and true) or false)
+end
+
+local function OnActivated()
+	if not Tool.Enabled or not CheckIfAlive() then
+		return
+	end
+	
+	if ToolUnequipped then
+		ToolUnequipped:Disconnect()
+	end
+	
+	local CurrentlyEquipped = true
+	
+	ToolUnequipped = Tool.Unequipped:Connect(function()
+		CurrentlyEquipped = false
+	end)
+	
+	-- If the humanoid's health is full then player cant use it
+	if Humanoid.Health == Humanoid.MaxHealth then
+		return
+	end
+	
+	Tool.Enabled = false
+	Tool.Grip = Grips.Drinking
+	Sounds.Drink:Play()
+	
+	wait(3)
+	
+	if not CurrentlyEquipped then
+		Tool.Enabled = true
+		Tool.Grip = Grips.Normal
+		return
+	end
+	
+	HealPlayer(RootPart, Humanoid)
+	
+	Tool.Grip = Grips.Normal
+	
+	wait(1)
+	
+	if CurrentlyEquipped then
+		local Direction = RootPart.CFrame.LookVector
+		local EmptyBottle = Tool.Handle:Clone()
+		EmptyBottle.Name = "EmptyHealingPotion"
+		EmptyBottle.Transparency = 0
+		EmptyBottle.Parent = workspace
+		EmptyBottle:ApplyImpulse(Direction * 45 + Vector3.new(0, 45, 0))
+		EmptyBottle.CanCollide = true
+		local GlassScript = script.GlassScript:Clone()
+		GlassScript.Disabled = false
+		GlassScript.Parent = EmptyBottle
+	end
+	
+	Tool:Destroy()
+	
+end
+
+local function OnEquipped()
+	Character = Tool.Parent
+	Humanoid = Character:FindFirstChildOfClass("Humanoid")
+	Player = Players:GetPlayerFromCharacter(Character)
+	RootPart = Humanoid.RootPart
+	if not CheckIfAlive() then
+		return
+	end
+	ToolEquipped = true
+end
+
+local function OnUnequipped()
+	if ToolUnequipped then
+		ToolUnequipped:Disconnect()
+	end
+	for i, v in pairs(Sounds) do
+		v:Stop()
+	end
+	ToolEquipped = false
+end
+
+Tool.Equipped:Connect(OnEquipped)
+Tool.Activated:Connect(OnActivated)
+Tool.Unequipped:Connect(OnUnequipped)

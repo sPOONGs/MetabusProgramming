@@ -1,0 +1,153 @@
+local SAVE_ON_DEATH = false -- 사망해도 아이템 보존 true: 켜짐, false: 꺼짐
+
+local ItemsFolder = game.ServerStorage.Items -- 여기 추가된 아이템만 저장함
+local DataManager = require(script.DataManager)
+local ChangedItemName = require(script.ChangedItemName)
+local OriginalItemName = {}
+for i, v in pairs(ChangedItemName)do
+	OriginalItemName[v] = i
+end
+
+local function FindItem(itemName)
+	local item = ItemsFolder:FindFirstChild(itemName) or ItemsFolder:FindFirstChild(ChangedItemName[itemName])
+	return item
+end
+
+local function GetOriginalNameFromChangedItemName(itemName)
+	local itemName = OriginalItemName[itemName] or itemName
+	return itemName
+end
+
+local function ItemObtained(player, itemName)
+	local item = ItemsFolder:FindFirstChild(itemName)
+	if item then
+		if SAVE_ON_DEATH == true then -- 사망시 초기화 아닌 경우
+			item:Clone().Parent = player.StarterGear -- 여기 넣은 아이템은 부활시 Backpack에 자동으로 넣어줌
+		end
+		
+		local originalData = DataManager:GetData(player).items
+		table.insert(originalData, GetOriginalNameFromChangedItemName(itemName))
+		--DataManager:UpdateData(player, "items", originalData) -- table.insert 직접 한것으로도 업데이트 됨
+		DataManager:SaveData(player)
+	end
+end
+
+local function ItemLost(player, itemName)
+	local item = ItemsFolder:FindFirstChild(itemName)
+	if item then
+		if SAVE_ON_DEATH == true then -- 사망시 초기화 아닌 경우
+			local starterGearItem = player.StarterGear:FindFirstChild(itemName)
+			
+			if not starterGearItem then
+				warn("ItemSave: no item in StarterGear", itemName, player)
+			else
+				starterGearItem:Destroy() -- 부활시 아이템 인벤토리에 돌아오지 않게 삭제해줌
+			end
+			
+		end
+		
+		local originalData = DataManager:GetData(player).items
+		local itemIndex = table.find(originalData, GetOriginalNameFromChangedItemName(itemName))
+		
+		if not itemIndex then
+			warn("ItemSave: no index for ", itemName, GetOriginalNameFromChangedItemName(itemName),originalData)
+		end
+		
+		table.remove(originalData, itemIndex)
+		--DataManager:UpdateData(player, "items", originalData)-- table.remove 직접 한것으로도 업데이트 됨
+		DataManager:SaveData(player)
+	end
+end
+
+game.Players.PlayerAdded:Connect(function(player)
+	
+	local Data = DataManager:GetData(player) -- 데이터 받아옴
+	repeat 
+		task.wait() 
+		Data = DataManager:GetData(player)
+	until Data
+	
+	for i, itemName in ipairs(Data.items)do -- 데이터에 따라 아이템 불러와서 인벤토리 넣어줌
+		local item = FindItem(itemName)
+		if item then
+			if SAVE_ON_DEATH == true then -- 사망시 초기화 아닌 경우
+				item:Clone().Parent = player.StarterGear -- 여기 넣은 아이템은 부활시 Backpack에 자동으로 넣어줌
+			end
+			item:Clone().Parent = player.Backpack -- 인벤토리
+		else
+			warn("ItemSave: no item in Items Folder for ", itemName)
+		end
+	end
+	
+	-- 캐릭터 스폰시
+	local function onCharacterAdded(character)
+		local Humanoid = character.Humanoid
+		
+		
+		Humanoid.Died:Connect(function() 
+			if SAVE_ON_DEATH == false then -- 사망시 초기화
+				DataManager:UpdateData(player, "items", {})
+				DataManager:SaveData(player)
+			end
+			
+			Humanoid:UnequipTools() -- 무기 장비 해제
+			for i, v in ipairs(player.Backpack:GetChildren())do -- 인벤토리 삭제(아이템 복사 방지)
+				v:Destroy()
+			end
+		end)
+		
+		
+		local currentInventory = player.Backpack:GetChildren() -- 현재 인벤토리 파악용 테이블
+		local equippedTool = character:FindFirstChildOfClass("Tool")
+		if equippedTool then
+			table.insert(currentInventory, equippedTool)
+		end
+		
+		local function childAdded(child) -- 캐릭터나 Backpack에 새 아이템이 추가되었을 때
+			if not child:IsA("Tool") then -- Tool이 아닌 경우 제외
+				return
+			end
+			
+			if table.find(currentInventory, child) then 
+				return
+			end-- backpack에 있던 거 장비한 경우, 장비했다가 backpack으로 다시 넣은 경우 제외
+				
+			table.insert(currentInventory, child) -- 현재 인벤토리 테이블에 추가
+			ItemObtained(player, child.Name) -- 아이템 획득(데이터 업데이트)
+		end
+		character.ChildAdded:Connect(childAdded)
+		player.Backpack.ChildAdded:Connect(childAdded)
+		
+		
+		local function childRemoved(child) -- 캐릭터나 Backpack에서 아이템이 사라졌을 때
+			
+			-- Humanoid.Parent는 개체의 삭제 여부를 알 수 있음
+			-- 캐릭터가 사라지거나 죽은 경우 제외
+			if Humanoid.Parent == nil or Humanoid.Health <= 0 then
+				return
+			end
+			
+			if not child:IsA("Tool") then  -- Tool이 아닌 경우 제외
+				return
+			end
+			
+			if child.Parent == character or child.Parent == player.Backpack then
+				return
+			end -- 캐릭터가 장비했거나 Backpack으로 돌아온 경우 제외
+			
+			local index = table.find(currentInventory, child)
+			table.remove(currentInventory, index) -- 현재 인벤토리 테이블에서 제거
+			ItemLost(player, child.Name) -- 아이템 잃음(데이터 업데이트)
+			
+		end
+		character.ChildRemoved:Connect(childRemoved)
+		player.Backpack.ChildRemoved:Connect(childRemoved)
+		
+	end
+	player.CharacterAdded:Connect(onCharacterAdded) -- 캐릭터 스폰 이벤트와 함수 연결
+	
+	if player.Character then -- 캐릭터가 이미 스폰된 경우 함수 한번 불러주기
+		onCharacterAdded(player.Character)
+	end
+end)
+

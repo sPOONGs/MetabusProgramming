@@ -1,0 +1,62 @@
+local bossM = game.Workspace.Monster:FindFirstChild("BossM")
+local bossW = game.Workspace.Monster:FindFirstChild("BossW")
+
+local bossMDead = false
+local bossWDead = false
+
+print("bossM:", bossM) -- 디버깅 메시지 추가
+print("bossW:", bossW) -- 디버깅 메시지 추가
+
+-- 모든 몬스터의 체력을 증가시키는 함수
+local function increaseMonstersStats()
+	local monstersFolder = game.Workspace.Monster
+	if monstersFolder then
+		for _, monster in pairs(monstersFolder:GetChildren()) do
+			local monsterHumanoid = monster:FindFirstChildOfClass("Humanoid")
+			if monsterHumanoid then
+				-- 체력 증가
+				local oldHealth = monsterHumanoid.Health
+				local oldMaxHealth = monsterHumanoid.MaxHealth
+				monsterHumanoid.MaxHealth = oldMaxHealth * 1.5
+				monsterHumanoid.Health = monsterHumanoid.MaxHealth
+				print(monster.Name .. "의 체력이 증가했습니다: " .. oldHealth .. " -> " .. monsterHumanoid.Health)
+				print(monster.Name .. "의 최대 체력이 증가했습니다: " .. oldMaxHealth .. " -> " .. monsterHumanoid.MaxHealth)
+			else
+				print(monster.Name .. "에 Humanoid가 없습니다.")
+			end
+		end
+	else
+		print("Monster 폴더를 찾을 수 없습니다.")
+	end
+end
+
+-- 두 보스 몬스터가 모두 죽었는지 확인하는 함수
+local function checkBossesDead()
+	if bossMDead and bossWDead then
+		increaseMonstersStats()
+	end
+end
+
+-- bossM 보스의 사망 이벤트 연결
+if bossM and bossM:FindFirstChildOfClass("Humanoid") then
+	print("bossM 보스가 설정되었습니다.") -- 디버깅 메시지 추가
+	bossM:FindFirstChildOfClass("Humanoid").Died:Connect(function()
+		bossMDead = true
+		print("bossM 보스가 죽었습니다.")
+		checkBossesDead()
+	end)
+else
+	print("bossM 보스를 찾을 수 없습니다.")
+end
+
+-- bossW 보스의 사망 이벤트 연결
+if bossW and bossW:FindFirstChildOfClass("Humanoid") then
+	print("bossW 보스가 설정되었습니다.") -- 디버깅 메시지 추가
+	bossW:FindFirstChildOfClass("Humanoid").Died:Connect(function()
+		bossWDead = true
+		print("bossW 보스가 죽었습니다.")
+		checkBossesDead()
+	end)
+else
+	print("bossW 보스를 찾을 수 없습니다.")
+end

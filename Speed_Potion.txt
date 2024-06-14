@@ -1,0 +1,21 @@
+local plr = game.Players.LocalPlayer
+local Sounds = {
+	GlassBreak = script.Parent:WaitForChild("GlassBreak"),
+	Drink = script.Parent:WaitForChild("DrinkSound"),
+}
+local char = plr.Character or plr.CharacterAdded:Wait()
+
+local normalSpeed = char:WaitForChild('Humanoid').WalkSpeed
+local targetSpeed = normalSpeed + 10
+
+script.Parent.Activated:Connect(function()
+	Sounds.Drink:Play()
+	wait(3)
+	char:WaitForChild('Humanoid').WalkSpeed = targetSpeed
+	wait(1)
+	Sounds.GlassBreak:Play()
+	script.Parent:Destroy()
+	task.wait(15)
+
+	char:WaitForChild('Humanoid').WalkSpeed = normalSpeed
+end)
